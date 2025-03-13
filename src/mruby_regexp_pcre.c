@@ -9,6 +9,12 @@
 #include <string.h>
 #include <pcre.h>
 
+#if 30000 <= MRUBY_RELEASE_NO
+#include <mruby/presym.h>
+#else
+#define MRB_IVSYM(s) mrb_intern_lit(mrb, "@"#s)
+#endif
+
 #define MRUBY_REGEXP_IGNORECASE         0x01
 #define MRUBY_REGEXP_EXTENDED           0x02
 #define MRUBY_REGEXP_MULTILINE          0x04
@@ -99,8 +105,8 @@ regexp_pcre_initialize(mrb_state *mrb, mrb_value self)
 
   mrb_get_args(mrb, "o|o", &source, &opt);
   if (mrb_obj_is_kind_of(mrb, source, mrb_class_get(mrb, "Regexp"))) {
-    opt    = mrb_iv_get(mrb, source, mrb_intern_lit(mrb, "@options"));
-    source = mrb_iv_get(mrb, source, mrb_intern_lit(mrb, "@source"));
+    opt    = mrb_iv_get(mrb, source, MRB_IVSYM(options));
+    source = mrb_iv_get(mrb, source, MRB_IVSYM(source));
   }
   source = mrb_string_type(mrb, source);
 
@@ -121,8 +127,8 @@ regexp_pcre_initialize(mrb_state *mrb, mrb_value self)
   if (reg->re == NULL) {
     mrb_raisef(mrb, E_ARGUMENT_ERROR, "invalid regular expression");
   }
-  mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@source"), source);
-  mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@options"), mrb_fixnum_value(mrb_pcre_to_mruby_options(coptions)));
+  mrb_iv_set(mrb, self, MRB_IVSYM(source), source);
+  mrb_iv_set(mrb, self, MRB_IVSYM(options), mrb_fixnum_value(mrb_pcre_to_mruby_options(coptions)));
 
   pcre_fullinfo(reg->re, NULL, PCRE_INFO_NAMECOUNT, &namecount);
   if (namecount > 0) {
@@ -179,7 +185,7 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
   }
 
   /* XXX: need current scope */
-  mrb_obj_iv_set(mrb, (struct RObject *)mrb_class_real(RDATA(self)->c), mrb_intern_lit(mrb, "@last_match"), mrb_nil_value());
+  mrb_obj_iv_set(mrb, (struct RObject *)mrb_class_real(RDATA(self)->c), MRB_IVSYM(last_match), mrb_nil_value());
 
   c = mrb_class_get(mrb, "MatchData");
   md = mrb_funcall(mrb, mrb_obj_value(c), "new", 0);
@@ -188,10 +194,10 @@ regexp_pcre_match(mrb_state *mrb, mrb_value self)
   mrb_md->ovector = match;
   mrb_md->length = matchlen;
 
-  mrb_iv_set(mrb, md, mrb_intern_lit(mrb, "@regexp"), self);
-  mrb_iv_set(mrb, md, mrb_intern_lit(mrb, "@string"), mrb_str_dup(mrb, str));
+  mrb_iv_set(mrb, md, MRB_IVSYM(regexp), self);
+  mrb_iv_set(mrb, md, MRB_IVSYM(string), mrb_str_dup(mrb, str));
   /* XXX: need current scope */
-  mrb_obj_iv_set(mrb, (struct RObject *)mrb_class_real(RDATA(self)->c), mrb_intern_lit(mrb, "@last_match"), md);
+  mrb_obj_iv_set(mrb, (struct RObject *)mrb_class_real(RDATA(self)->c), MRB_IVSYM(last_match), md);
 
   mrb_gv_set(mrb, mrb_intern_lit(mrb, "$~"), md);
   mrb_gv_set(mrb, mrb_intern_lit(mrb, "$&"), mrb_funcall(mrb, md, "to_s", 0));
@@ -228,8 +234,8 @@ regexp_equal(mrb_state *mrb, mrb_value self)
     mrb_raise(mrb, E_RUNTIME_ERROR, "Invalid Regexp");
   }
 
-  if (mrb_str_equal(mrb, mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@source")),
-                         mrb_iv_get(mrb, other, mrb_intern_lit(mrb, "@source")))) {
+  if (mrb_str_equal(mrb, mrb_iv_get(mrb, self, MRB_IVSYM(source)),
+                         mrb_iv_get(mrb, other, MRB_IVSYM(source)))) {
     return mrb_true_value();
   }
 
@@ -288,8 +294,8 @@ mrb_matchdata_init_copy(mrb_state *mrb, mrb_value copy)
   }
   DATA_PTR(copy) = mrb_md_copy;
 
-  mrb_iv_set(mrb, copy, mrb_intern_lit(mrb, "@regexp"), mrb_iv_get(mrb, src, mrb_intern_lit(mrb, "@regexp")));
-  mrb_iv_set(mrb, copy, mrb_intern_lit(mrb, "@string"), mrb_iv_get(mrb, src, mrb_intern_lit(mrb, "@string")));
+  mrb_iv_set(mrb, copy, MRB_IVSYM(regexp), mrb_iv_get(mrb, src, MRB_IVSYM(regexp)));
+  mrb_iv_set(mrb, copy, MRB_IVSYM(string), mrb_iv_get(mrb, src, MRB_IVSYM(string)));
 
   return copy;
 }
