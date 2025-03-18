@@ -9,7 +9,7 @@
 #include <string.h>
 #include <pcre.h>
 
-#if 30000 <= MRUBY_RELEASE_NO
+#if MRUBY_RELEASE_NO >= 30000
 #include <mruby/presym.h>
 #else
 #define MRB_IVSYM(s) mrb_intern_lit(mrb, "@"#s)
